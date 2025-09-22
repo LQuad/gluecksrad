@@ -1,0 +1,99 @@
+:root {
+  /* Schriften */
+  --font-sans: Arial, "Helvetica Neue", Helvetica, sans-serif;
+
+  /* Farben */
+  --color-text: #023d6b;
+  --color-muted: #3e5c76;
+  --color-accent: #023d6b;
+  --color-success: #28a745;
+  --color-error: #dc3545;
+  --color-bg-light: #ffffff;
+  --color-bg-subtle: #f5f7fb;
+}
+
+/* Grundtypografie */
+body {
+  font-family: var(--font-sans);
+  color: var(--color-text);
+  line-height: 1.45;
+  background: var(--color-bg-light);
+}
+
+/* Segment-Titel im Overlay */
+#questionsContent strong {
+  display: block;
+  font-size: 1.5rem;   /* ~24px */
+  font-weight: bold;
+  margin-bottom: 12px;
+  color: var(--color-accent);
+}
+
+/* Fragen-Toggle */
+.questionToggle {
+  font-size: 1.125rem; /* ~18px */
+  font-weight: bold;
+  color: var(--color-text);
+  padding: 8px 0;
+  margin-bottom: 4px;
+  cursor: pointer;
+}
+
+/* Antworten-Wrapper */
+.answersWrapper {
+  margin-bottom: 12px;
+}
+
+/* Antwort-Buttons */
+.answer {
+  display: block;
+  width: 100%;
+  font-size: 1rem;
+  text-align: left;
+  padding: 8px 12px;
+  margin: 4px 0 12px;
+  background: var(--color-bg-subtle);
+  border: 1px solid #e0e0e0;
+  border-radius: 0;
+  cursor: pointer;
+}
+.answer:hover {
+  background: #e9eef6;
+}
+
+/* Zustände: richtig/falsch */
+.correct {
+  background: var(--color-success) !important;
+  color: #fff !important;
+  border-color: var(--color-success) !important;
+}
+.incorrect {
+  background: var(--color-error) !important;
+  color: #fff !important;
+  border-color: var(--color-error) !important;
+}
+
+/* Buttonreihe unten im Overlay */
+#buttonRow button {
+  font-size: 1rem;
+  padding: 12px 22px;
+  border-radius: 12px;
+  border: none;
+  color: #fff;
+  background: var(--color-error);
+  cursor: pointer;
+}
+#buttonRow button:hover {
+  background: #a71d2a;
+}
+
+/* Begründung nach richtiger Antwort */
+.justification {
+  margin-top: 10px;
+  padding: 10px;
+  background-color: #e6f6ec;
+  border-left: 4px solid #28a745;
+  color: #000;
+  font-size: 0.9375rem; /* etwas kleiner als Fließtext */
+  line-height: 1.4;
+}
