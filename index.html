@@ -3,78 +3,135 @@
 <head>
   <meta charset="UTF-8" />
   <title>Interaktives Glücksrad</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+
   <style>
+    :root{
+      --accent:#023d6b;
+      --btn-bg:#ebebeb;
+      --focus-yellow:#ffbf47;
+    }
+
     body {
       font-family: Arial, sans-serif;
       text-align: center;
       padding: 20px;
       background: #ffffff;
-      color: #023d6b;
+      color: var(--accent);
       margin: 0;
-      height: 100vh;
+      height: 100dvh; /* bessere mobile Höhe */
       overflow: hidden;
     }
 
+    /* Layout */
     #wheelWrapper {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 40px;
-      margin-top: 10px;
+	  display: flex;
+	  align-items: center;
+	  justify-content: center;
+	  gap: 24px;
+	  min-height: calc(100dvh - 40px); /* statt height: sorgt für mehr Flexibilität */
+	}
+
+	/* Mobile: oben ausgerichtet */
+	@media (max-width: 768px) {
+	  #wheelWrapper {
+		align-items: flex-start;   /* oben statt Mitte */
+		min-height: auto;          /* keine künstliche Höhe */
+		margin-top: 20px;          /* kleiner Abstand vom oberen Rand */
+	  }
+	}
+
+    /* Container rund ums Rad: als Bezug für absolute Elemente (Pfeil, Button) */
+    .wheel-stage {
+      position: relative;
+      display: inline-block;
     }
 
+    /* Zeiger (responsiv) */
     #arrow {
-      width: 0;
-      height: 0;
-      border-left: 15px solid transparent;
-      border-right: 15px solid transparent;
-      border-bottom: 25px solid #023d6b;
+      width: 0; height: 0;
+      border-left: 2.5vw solid transparent;
+      border-right: 2.5vw solid transparent;
+      border-bottom: 4vw solid var(--accent);
+      max-width: 25px;  /* Obergrenze am Desktop */
+      max-height: 40px;
       position: absolute;
       top: -10px;
       left: 50%;
       transform: translateX(-50%);
       z-index: 2;
+      pointer-events: none;
     }
 
     canvas {
+      display: block;
       margin-top: 20px;
       border-radius: 12px;
+      /* Größe wird per JS gesetzt (style width/height), hier keine festen Pixel */
     }
 
-    #questions {
-      position: fixed;
+    /* Landmarke + runder Spin-Button in der Mitte */
+    nav[aria-label="Glücksrad Steuerung"] {
+      /* kein extra Layout nötig – der Button ist absolut positioniert */
+    }
+
+    #spinBtn {
+      position: absolute;
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
+      width: clamp(88px, 22vw, 120px);
+      height: clamp(88px, 22vw, 120px);
+      border-radius: 50%;
+      border: none;
+      background-color: var(--btn-bg);
+      color: var(--accent);
+      font-size: clamp(16px, 5vw, 20px);
+      font-weight: bold;
+      cursor: pointer;
+      box-shadow: 0 0 8px rgba(0,0,0,0.2);
+      transition: box-shadow 0.3s ease, transform 0.1s ease;
+      z-index: 3; /* über dem Rad */
+    }
+
+    /* Hover + Tastaturfokus → stärkerer Schatten, kein Rahmen */
+    #spinBtn:hover,
+    #spinBtn:focus-visible {
+      box-shadow: 0 0 15px rgba(0,0,0,0.4);
+      outline: none;
+    }
+
+    #spinBtn:active {
+      transform: translate(-50%, -50%) scale(0.95);
+      box-shadow: 0 0 10px rgba(0,0,0,0.3);
+    }
+
+    /* Overlay */
+    #questions {
+      position: fixed;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
       width: 520px;
-      max-width: 90vw;
-      height: 90vh;
-      background: #023d6b;
+      max-width: 92vw;
+      height: 92dvh;
+      background: var(--accent);
       box-shadow: 0 0 20px rgba(0,0,0,0.6);
       color: white;
-      display: none; /* nur einmal definiert */
+      display: none; /* vom JS auf flex gesetzt */
       z-index: 1000;
       flex-direction: column;
       overflow: hidden;
-    }
-
-    .questionToggle {
-      font-weight: bold;
-      margin-bottom: 6px;
-      cursor: pointer;
-      user-select: none;
-      padding: 6px 0;
+      border-radius: 12px;
     }
 
     #imageContainer {
       background-color: #e0f2ff;
       flex: 1.2;
-      min-height: 40%;
+      min-height: 36%;
       display: flex;
       justify-content: center;
       align-items: center;
-      padding-top: 2px;
-      padding-bottom: 2px;
+      padding: 2px 0;
       overflow: hidden;
     }
 
@@ -89,43 +146,51 @@
       background: #ffffff;
       flex: 3;
       overflow-y: auto;
-      padding: 20px 30px 30px 30px;
+      padding: 16px 18px 22px;
       text-align: left;
-      color: #000000;
+      color: #000;
     }
     #questionsContent strong {
       font-size: 20px;
-      margin-bottom: 12px;
+      margin-bottom: 10px;
       display: block;
+      color: var(--accent);
+    }
+
+    .questionToggle {
+      font-weight: bold;
+      margin: 8px 0 4px;
+      cursor: pointer;
+      user-select: none;
+      padding: 6px 2px;
     }
 
     .answersWrapper {
       display: none;
-      margin-bottom: 0px;
+      margin-bottom: 4px;
     }
 
     .answer {
       display: block;
-      padding: 8px 12px;
+      padding: 10px 12px;
       margin: 4px 0 10px 0;
       background: #f5f5f5;
-      border-radius: 0px;
+      border-radius: 0;
       cursor: pointer;
-      transition: background-color 0.3s ease;
+      transition: background-color 0.2s ease;
       color: #000;
       width: 100%;
       box-sizing: border-box;
       text-align: left;
       outline: none;
       border: none;
+      font-size: 16px;
     }
-    .answer:hover {
-      background: #e0e0e0;
-    }
+    .answer:hover { background: #e9e9e9; }
 
     .correct {
       background: #28a745 !important;
-      color: white !important;
+      color: #fff !important;
       position: relative;
       padding-right: 30px;
     }
@@ -141,7 +206,7 @@
 
     .incorrect {
       background: #dc3545 !important;
-      color: white !important;
+      color: #fff !important;
       position: relative;
       padding-right: 30px;
     }
@@ -157,10 +222,11 @@
 
     #buttonRow {
       background: #ffffff;
-      padding: 15px 30px;
+      padding: 12px 16px 16px;
       display: flex;
       justify-content: center;
       flex-shrink: 0;
+      gap: 8px;
     }
 
     #buttonRow button {
@@ -171,62 +237,55 @@
       cursor: pointer;
       color: white;
       background-color: #dc3545;
-      transition: background-color 0.3s ease;
+      transition: background-color 0.2s ease;
     }
-    #closeBtn:hover {
-      background-color: #a71d2a;
-    }
-	
-	/* sichtbarer Tastaturfokus für Fragen (Toggles) */
-	.questionToggle:focus-visible {
-	  outline: 3px solid #023d6b; 
-	  outline-offset: 2px;
-	  border-radius: 6px;
-	}
+    #closeBtn:hover { background-color: #a71d2a; }
 
-	/* sichtbarer Tastaturfokus für Antwort-Buttons */
-	.answer:focus-visible {
-	  outline: 3px solid #023d6b;
-	  outline-offset: 2px;
-	}
-
-	/* Schließen-Button im Overlay */
+    /* sichtbarer Fokus NUR bei Tastatur-Nutzung */
+    .questionToggle:focus-visible,
+	.answer:focus-visible,
 	#closeBtn:focus-visible {
 	  outline: 3px solid #023d6b;
 	  outline-offset: 3px;
-	  border-radius: 10px; 
+	  border-radius: 6px;
 	}
-	
-	#spinBtn {
-	  position: absolute;
-	  top: 50%;
-	  left: 50%;
-	  transform: translate(-50%, -50%);
-	  width: 120px;
-	  height: 120px;
-	  border-radius: 50%;
-	  border: none;
-	  background-color: #ebebeb;
-	  color: #023d6b;
-	  font-size: 20px;
-	  font-weight: bold;
-	  cursor: pointer;
-	  box-shadow: 0 0 8px rgba(0,0,0,0.2);
-	  transition: background-color 0.3s ease, box-shadow 0.3s ease, transform 0.1s ease;
-	}
-
-	/* Hover + Tastaturfokus */
-	#spinBtn:hover,
 	#spinBtn:focus-visible {
-	  background-color: #ebebeb;
-	  box-shadow: 0 0 15px rgba(0,0,0,0.4);
-	  outline: none; 
+	  outline: none; /* Standard-Rahmen weg */
+	  box-shadow: 0 0 0 4px #023d6b; /* runder Fokusrahmen */
 	}
 
-	/* Klick-Effekt */
-	#spinBtn:active {
-	  transform: translate(-50%, -50%) scale(0.95);
-	  box-shadow: 0 0 10px rgba(0,0,0,0.3);
+
+    /* Mobile Tweaks */
+    @media (max-width: 480px) {
+      #questionsContent { padding: 14px 14px 18px; }
+      #questionsContent strong { font-size: 18px; }
+      .questionToggle { font-size: 16px; }
+      .answer { font-size: 16px; padding: 10px 12px; }
+      #buttonRow button { width: 100%; font-size: 18px; padding: 14px 18px; }
+    }
+
+    /* Weniger Bewegung respektieren */
+    @media (prefers-reduced-motion: reduce) {
+      * { animation: none !important; transition: none !important; }
+    }
+	
+	@media (min-width: 1024px) {
+	  #arrow {
+		border-left: 30px solid transparent;
+		border-right: 30px solid transparent;
+		border-bottom: 48px solid var(--accent);
+		top: -12px;
+		max-width: none;
+		max-height: none;
+	}
+	}
+ 
+	 @media (min-width: 1024px) {
+	  #spinBtn {
+		width: 140px;
+		height: 140px;
+		font-size: 22px;
+	  }
 	}
 
 
@@ -235,28 +294,32 @@
 <body>
 
   <div id="wheelWrapper">
-    <div style="position: relative;">
+    <div class="wheel-stage">
       <div id="arrow"></div>
-      <canvas id="wheelCanvas" width="700" height="700"></canvas>
-	  <nav aria-label="Glücksrad Steuerung">
-		<button id="spinBtn" aria-label="Glücksrad drehen">Drehen</button>
-		</nav>
+      <canvas id="wheelCanvas"></canvas>
+
+      <!-- Landmarke + zentraler Button -->
+      <nav aria-label="Glücksrad Steuerung">
+        <button id="spinBtn" aria-label="Glücksrad drehen">Drehen</button>
+      </nav>
     </div>
   </div>
 
+  <!-- Overlay -->
   <div id="questions" tabindex="-1" role="dialog" aria-modal="true">
     <div id="imageContainer">
       <img id="resultImage" src="" alt="Ergebnisbild" />
     </div>
     <div id="questionsContent"></div>
     <div id="buttonRow">
-      <button id="closeBtn" onclick="closeOverlay()">Schließen</button>
+      <button id="closeBtn" type="button" onclick="closeOverlay()">Schließen</button>
     </div>
   </div>
 
   <script>
+    /* ===== Segmente (Beispiel: 3 Stück) ===== */
     const segments = [
-	// SDG 1
+      // SDG 1
       {
         label: "Keine Armut (SDG 1)",
         color: "#e5243b",
@@ -272,96 +335,115 @@
             ],
             justification: `
               <p>
-              <a href="https://www.fz-juelich.de/de/ibg/ibg-3/forschung/umweltprozesse-und-technologien/umweltsensorik-und-monitoring/organo-rice"
-                 target="_blank" rel="noopener noreferrer">OrganoRice</a>
-              (IBG-3) analysiert und begleitet die Umstellung ...
+                <a href="https://www.fz-juelich.de/de/ibg/ibg-3/forschung/umweltprozesse-und-technologien/umweltsensorik-und-monitoring/organo-rice"
+                   target="_blank" rel="noopener noreferrer">OrganoRice</a>
+                (IBG-3) analysiert und begleitet die Umstellung ...
               </p>`
           }
         ]
       },
-	// SDG 2
-	{
-    label: "Kein Hunger (SDG 2)",
-    color: "#DDA63A",
-    image: "https://www.fz-juelich.de/de/ueber-uns/mission/nachhaltigkeit/sdg-icon-de-02.svg/@@images/image-1-3a5ed0aef72920f776d7c4a404b7f6d1.svg",
-    imageBgColor: "#dda63a",
-    questions: [
-      {
-        text: "Welche Nutzpflanze untersucht das FZJ zur Unterstützung kleinbäuerlicher Einkommen?",
-        answers: [
-          { text: "A) Quinoa", correct: false },
-          { text: "B) Maniok (Cassava)", correct: true },
-          { text: "C) Süßkartoffel", correct: false }
-        ],
-        justification: "Das IBG-2 erforscht Maniok zur Ertragsstabilisierung und Einkommenssicherung für Kleinbauern."
-      }
-    ]
-  },
 
-  // SDG 3
-  {
-    label: "Gesundheit und Wohlergehen (SDG 3)",
-    color: "#4C9F38",
-    image: "https://www.fz-juelich.de/de/ueber-uns/mission/nachhaltigkeit/sdg-icon-de-03.svg/@@images/image-1-7f58dab14702daaecf7735004b581e25.svg",
-    imageBgColor: "#4C9F38",
-    questions: [
+      // SDG 2
       {
-        text: "Welchen Beitrag leistet das Projekt EBRAINS zur Förderung von Gesundheit und Wohlergehen?",
-        answers: [
-          { text: "A) Bürger:innen können direkt Hirnscans zur Selbstdiagnose abrufen", correct: false },
-          { text: "B) Digitale Infrastruktur für Forschung am Gehirn mit Daten, Simulationen und KI-Tools", correct: true },
-          { text: "C) Entwicklung von Medikamenten ohne klinische Studien", correct: false }
-        ],
-        justification: "EBRAINS (INM-1) bietet als Forschungsinfrastruktur Zugang zu Hirndaten, Simulationen, KI-Tools und HPC, fördert Zusammenarbeit und Innovationen im Gesundheitswesen."
+        label: "Kein Hunger (SDG 2)",
+        color: "#DDA63A",
+        image: "https://www.fz-juelich.de/de/ueber-uns/mission/nachhaltigkeit/sdg-icon-de-02.svg/@@images/image-1-3a5ed0aef72920f776d7c4a404b7f6d1.svg",
+        imageBgColor: "#dda63a",
+        questions: [
+          {
+            text: "Welche Nutzpflanze untersucht das FZJ zur Unterstützung kleinbäuerlicher Einkommen?",
+            answers: [
+              { text: "A) Quinoa", correct: false },
+              { text: "B) Maniok (Cassava)", correct: true },
+              { text: "C) Süßkartoffel", correct: false }
+            ],
+            justification: "Das IBG-2 erforscht Maniok zur Ertragsstabilisierung und Einkommenssicherung für Kleinbauern."
+          }
+        ]
+      },
+
+      // SDG 3
+      {
+        label: "Gesundheit und Wohlergehen (SDG 3)",
+        color: "#4C9F38",
+        image: "https://www.fz-juelich.de/de/ueber-uns/mission/nachhaltigkeit/sdg-icon-de-03.svg/@@images/image-1-7f58dab14702daaecf7735004b581e25.svg",
+        imageBgColor: "#4C9F38",
+        questions: [
+          {
+            text: "Welchen Beitrag leistet das Projekt EBRAINS zur Förderung von Gesundheit und Wohlergehen?",
+            answers: [
+              { text: "A) Bürger:innen können direkt Hirnscans zur Selbstdiagnose abrufen", correct: false },
+              { text: "B) Digitale Infrastruktur für Forschung am Gehirn mit Daten, Simulationen und KI-Tools", correct: true },
+              { text: "C) Entwicklung von Medikamenten ohne klinische Studien", correct: false }
+            ],
+            justification: "EBRAINS (INM-1) bietet als Forschungsinfrastruktur Zugang zu Hirndaten, Simulationen, KI-Tools und HPC, fördert Zusammenarbeit und Innovationen im Gesundheitswesen."
+          }
+        ]
       }
-	 ]
-	}	 
     ];
 
+    /* ===== Setup & State ===== */
     const canvas = document.getElementById("wheelCanvas");
-    const ctx = canvas.getContext("2d");
-    const centerX = canvas.width / 2;
-    const centerY = canvas.height / 2;
-    const radius = 320;
+    const ctx = canvas.getContext("2d", { alpha: true });
+    const questionsOverlay = document.getElementById("questions");
+    const resultImage = document.getElementById("resultImage");
+    const questionsContent = document.getElementById("questionsContent");
+    const spinBtn = document.getElementById("spinBtn");
+
     const BASE_OFFSET = -Math.PI / 2;
-	const spinBtn = document.getElementById("spinBtn");
-
-	spinBtn.addEventListener("click", () => {
-	  if (!spinning) startSpin();
-	});
-
-	spinBtn.addEventListener("keydown", (e) => {
-	  if ((e.key === "Enter" || e.key === " ") && !spinning) {
-		e.preventDefault();
-		startSpin();
-	  }
-});
-
+    let radius = 320; // dynamisch gesetzt
     let lastIndex = -1;
     let spinning = false;
     let rotation = 0;
 
-    const questionsOverlay = document.getElementById("questions");
-    const resultImage = document.getElementById("resultImage");
-    const questionsContent = document.getElementById("questionsContent");
+    /* ===== Responsive Canvas (incl. Retina) ===== */
+    function sizeCanvas() {
+	  const dpr = Math.max(1, window.devicePixelRatio || 1);
 
-    // Icons laden
+	  const maxSize = Math.min(window.innerWidth, window.innerHeight) * 0.9; 
+	  const sizeCss = Math.max(280, Math.min(maxSize, 700)); // min 280px, max 700px
+
+	  // CSS-Größe quadratisch
+	  canvas.style.width = `${sizeCss}px`;
+	  canvas.style.height = `${sizeCss}px`;
+
+	  // interne Auflösung quadratisch
+	  canvas.width  = Math.round(sizeCss * dpr);
+	  canvas.height = Math.round(sizeCss * dpr);
+
+	  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+	  radius = (sizeCss / 2) - 20; // bleibt rund
+	  drawWheel(0);
+	}
+
+
+    window.addEventListener("resize", sizeCanvas);
+    window.addEventListener("orientationchange", sizeCanvas);
+
+    /* ===== Bilder vorladen, dann initial zeichnen ===== */
     let loadedImages = 0;
-    const totalImages = segments.length;
     segments.forEach((segment) => {
       const img = new Image();
       img.src = segment.image;
       img.onload = () => {
         segment.iconImg = img;
         loadedImages++;
-        if (loadedImages === totalImages) {
-          drawWheel(0);
+        if (loadedImages === segments.length) {
+          sizeCanvas(); // danach gezeichnet
         }
       };
     });
 
+    /* ===== Zeichnen ===== */
     function drawWheel(rotationOffset = 0) {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const w = canvas.clientWidth;
+      const h = canvas.clientHeight;
+      ctx.clearRect(0, 0, w, h);
+
+      const centerX = w / 2;
+      const centerY = h / 2;
+
       const numSegments = segments.length;
       const anglePerSegment = (2 * Math.PI) / numSegments;
 
@@ -369,28 +451,31 @@
         const startAngle = i * anglePerSegment + BASE_OFFSET + rotationOffset;
         const endAngle   = startAngle + anglePerSegment;
 
+        // Segment
         ctx.beginPath();
         ctx.moveTo(centerX, centerY);
         ctx.arc(centerX, centerY, radius, startAngle, endAngle);
         ctx.fillStyle = segments[i].color;
         ctx.fill();
 
+        // Icon
         const icon = segments[i].iconImg;
         if (icon) {
           const angle = startAngle + anglePerSegment / 2;
-          const iconRadius = radius * 0.83;
+          const iconRadius = radius * 0.70; // statt 0.83
           let iconX = centerX + iconRadius * Math.cos(angle);
           let iconY = centerY + iconRadius * Math.sin(angle);
           const offset = 4;
           iconX += Math.cos(angle) * offset;
           iconY += Math.sin(angle) * offset;
 
-          const iconSize = 80;
-          const r = 18;
+          const iconSize = Math.max(56, Math.min(radius * 0.28, 110));
+          const r = Math.round(iconSize * 0.22);
           const x = iconX - iconSize / 2;
           const y = iconY - iconSize / 2;
 
           ctx.save();
+          // Runde Ecken Clip
           ctx.beginPath();
           ctx.moveTo(x + r, y);
           ctx.lineTo(x + iconSize - r, y);
@@ -403,35 +488,23 @@
           ctx.quadraticCurveTo(x, y, x + r, y);
           ctx.closePath();
           ctx.clip();
+
           ctx.drawImage(icon, x, y, iconSize, iconSize);
           ctx.restore();
         }
       }
     }
 
-    canvas.addEventListener("click", () => {
-      if (!spinning) startSpin();
-    });
-	spinBtn.addEventListener("click", () => {
-	  if (!spinning) startSpin();
-	});
-
-	// Tastatur-Bedienung
-	spinBtn.addEventListener("keydown", (e) => {
-	  if ((e.key === "Enter" || e.key === " ") && !spinning) {
-		e.preventDefault();
-		startSpin();
-	  }
-	});
-
+    /* ===== Spin starten ===== */
     function startSpin() {
+      if (spinning) return;
       spinning = true;
       resultImage.src = "";
 
-      let spinAngle = Math.random() * 10 + 20;
-      let currentRotation = 0;
+      const spinAngle = Math.random() * 10 + 20;
       const spinDuration = 3000;
       const startTime = performance.now();
+      let currentRotation = 0;
 
       function animate(time) {
         const elapsed = time - startTime;
@@ -445,12 +518,11 @@
           drawWheel(rotation);
           spinning = false;
 
+          // Auswahl bestimmen
           const numSegments = segments.length;
           const anglePerSegment = (2 * Math.PI) / numSegments;
           let selectedIndex = Math.floor(((2 * Math.PI) - rotation + anglePerSegment / 2) / anglePerSegment) % numSegments;
-          if (selectedIndex === lastIndex) {
-            selectedIndex = (selectedIndex + 1) % numSegments;
-          }
+          if (selectedIndex === lastIndex) selectedIndex = (selectedIndex + 1) % numSegments;
           lastIndex = selectedIndex;
           showResult(selectedIndex);
         }
@@ -458,13 +530,26 @@
       requestAnimationFrame(animate);
     }
 
-    function handleKeydown(e, segIdx, qIdx) {
-		if (e.key === "Enter" || e.key === " " || e.code === "Space") {
-			e.preventDefault();
-			toggleAnswers(segIdx, qIdx);
-		}
-	}
+    /* ===== Interaktionen: Canvas + Button + Touch ===== */
+    canvas.addEventListener("click", () => { if (!spinning) startSpin(); });
+    canvas.addEventListener("touchend", (e) => { e.preventDefault(); if (!spinning) startSpin(); }, { passive: false });
 
+    spinBtn.addEventListener("click", () => { if (!spinning) startSpin(); });
+    spinBtn.addEventListener("keydown", (e) => {
+      if ((e.key === "Enter" || e.key === " " || e.code === "Space") && !spinning) {
+        e.preventDefault();
+        startSpin();
+      }
+    });
+    spinBtn.addEventListener("touchend", (e) => { e.preventDefault(); if (!spinning) startSpin(); }, { passive: false });
+
+    /* ===== Fragen/Antworten Overlay ===== */
+    function handleKeydown(e, segIdx, qIdx) {
+      if (e.key === "Enter" || e.key === " " || e.code === "Space") {
+        e.preventDefault();
+        toggleAnswers(segIdx, qIdx);
+      }
+    }
 
     function showResult(index) {
       const segment = segments[index];
@@ -472,80 +557,76 @@
       document.getElementById("imageContainer").style.backgroundColor = segment.imageBgColor || "#e0f2ff";
 
       let html = `<strong>${segment.label}</strong>`;
+      segment.questions.forEach((q, i) => {
+        // Frage Toggle (ohne onclick – wir hängen Click per JS an)
+        html += `<div 
+          class="questionToggle" 
+          id="toggle-${index}-${i}"
+          role="button" 
+          tabindex="0"
+          aria-controls="answers-${index}-${i}"
+          aria-expanded="false"
+          onkeydown="handleKeydown(event, ${index}, ${i})">
+          ${q.text}
+        </div>`;
 
-		segment.questions.forEach((q, i) => {
-		  // Frage-Toggle mit ID und ARIA
-		  html += `<div 
-			  class="questionToggle" 
-			  id="toggle-${index}-${i}"
-			  role="button" 
-			  tabindex="0"
-			  aria-controls="answers-${index}-${i}"
-			  aria-expanded="false"
-			  onkeydown="handleKeydown(event, ${index}, ${i})">
-			  ${q.text}
-		</div>`;
-
-
-		  // Antworten-Wrapper (mit ID, ARIA)
-		  html += `<div class="answersWrapper" id="answers-${index}-${i}" aria-labelledby="toggle-${index}-${i}" aria-hidden="true">`;
-		  q.answers.forEach((a, ai) => {
-			const id = `answer-${index}-${i}-${ai}`;
-			html += `<button class="answer" type="button" id="${id}" onclick="checkAnswer('${id}', ${a.correct})">${a.text}</button>`;
-		  });
-		  html += `</div>`;
-		});
-
+        // Antworten
+        html += `<div class="answersWrapper" id="answers-${index}-${i}" aria-labelledby="toggle-${index}-${i}" aria-hidden="true">`;
+        q.answers.forEach((a, ai) => {
+          const id = `answer-${index}-${i}-${ai}`;
+          html += `<button class="answer" type="button" id="${id}" onclick="checkAnswer('${id}', ${a.correct})">${a.text}</button>`;
+        });
+        html += `</div>`;
+      });
 
       questionsContent.innerHTML = html;
-	  
-		document.querySelectorAll(".questionToggle").forEach((toggle, i) => {
-		  toggle.addEventListener("click", () => {
-			toggleAnswers(index, i);
-		  });
-		});
-
       questionsOverlay.style.display = "flex";
       questionsOverlay.focus();
 
+      // Click-Handler für alle Toggles (Maus)
+      document.querySelectorAll(`.questionToggle[id^="toggle-${index}-"]`).forEach((toggleEl) => {
+        const parts = toggleEl.id.split("-");
+        const qIdx = Number(parts[2]);
+        toggleEl.addEventListener("click", () => toggleAnswers(index, qIdx));
+      });
+
+      // Fokus auf erste Frage (nicht automatisch aufklappen)
       setTimeout(() => {
         const firstToggle = document.querySelector(".questionToggle");
-		if (firstToggle) firstToggle.focus();
-		}, 0);
-	}
+        if (firstToggle) firstToggle.focus();
+      }, 0);
+    }
 
     function toggleAnswers(segIdx, qIdx) {
-	  const wrapper = document.getElementById(`answers-${segIdx}-${qIdx}`);
-	  const toggle  = document.getElementById(`toggle-${segIdx}-${qIdx}`);
-	  if (!wrapper || !toggle) return;
+      const wrapper = document.getElementById(`answers-${segIdx}-${qIdx}`);
+      const toggle  = document.getElementById(`toggle-${segIdx}-${qIdx}`);
+      if (!wrapper || !toggle) return;
 
-	  const isOpen = wrapper.style.display === "block";
+      const isOpen = wrapper.style.display === "block";
 
-	  if (isOpen) {
-		// Schließen
-		wrapper.style.display = "none";
-		wrapper.setAttribute("aria-hidden", "true");
-		toggle.setAttribute("aria-expanded", "false");
-		// Fokus zurück auf die Frage
-		toggle.focus();
-	  } else {
-		// Öffnen
-		wrapper.style.display = "block";
-		wrapper.setAttribute("aria-hidden", "false");
-		toggle.setAttribute("aria-expanded", "true");
-		// Fokus auf erste Antwort
-		const firstAnswer = wrapper.querySelector(".answer");
-		if (firstAnswer) firstAnswer.focus();
-	  }
-	}
-
+      if (isOpen) {
+        // schließen
+        wrapper.style.display = "none";
+        wrapper.setAttribute("aria-hidden", "true");
+        toggle.setAttribute("aria-expanded", "false");
+        toggle.focus(); // Fokus zurück auf Frage
+      } else {
+        // öffnen
+        wrapper.style.display = "block";
+        wrapper.setAttribute("aria-hidden", "false");
+        toggle.setAttribute("aria-expanded", "true");
+        const firstAnswer = wrapper.querySelector(".answer");
+        if (firstAnswer) firstAnswer.focus(); // Fokus zur ersten Antwort
+      }
+    }
 
     function checkAnswer(id, isCorrect) {
       const el = document.getElementById(id);
       if (!el || el.classList.contains("correct") || el.classList.contains("incorrect")) return;
+
       if (isCorrect) {
         el.classList.add("correct");
-        const [_, segIdx, qIdx] = id.split("-");
+        const [, segIdx, qIdx] = id.split("-");
         const question = segments[segIdx].questions[qIdx];
         if (question.justification) {
           const justificationElem = document.createElement("div");
