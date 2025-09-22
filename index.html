@@ -3,40 +3,23 @@
 <head>
   <meta charset="UTF-8" />
   <title>Interaktives Glücksrad</title>
-
   <style>
     body {
+      font-family: Arial, sans-serif;
       text-align: center;
       padding: 20px;
       background: #ffffff;
+      color: #023d6b;
       margin: 0;
       height: 100vh;
       overflow: hidden;
-      color: #023d6b; /* Textfarbe für Layout-Kontrast, Typo kommt aus styles.css */
-      font-family: Arial, "Helvetica Neue", Helvetica, sans-serif;
-    }
-
-    .logo-top-right {
-      position: fixed;
-      top: -10px;
-      right: 80px;
-      height: 120px;
-      z-index: 1000;
-    }
-
-    .logo-top-left {
-      position: fixed;
-      top: 20px;
-      left: 70px;
-      height: 60px;
-      z-index: 1000;
     }
 
     #wheelWrapper {
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 40px; /* Abstand zwischen Rad und Button (falls genutzt) */
+      gap: 40px;
       margin-top: 10px;
     }
 
@@ -58,25 +41,6 @@
       border-radius: 12px;
     }
 
-    /* Falls du einen Spin-Button nutzt */
-    #spinBtn {
-      padding: 12px 28px;
-      height: 60px;
-      min-width: 120px;
-      font-size: 18px;
-      margin-top: 10px;
-      cursor: pointer;
-      background: #023d6b;
-      color: white;
-      border: none;
-      border-radius: 10px;
-      transition: background-color 0.3s ease;
-    }
-    #spinBtn:hover {
-      background-color: #013054;
-    }
-
-    /* Overlay-Container */
     #questions {
       position: fixed;
       top: 50%;
@@ -88,10 +52,18 @@
       background: #023d6b;
       box-shadow: 0 0 20px rgba(0,0,0,0.6);
       color: white;
-      display: none; /* WICHTIG: nur einmal definiert; Anzeige steuert JS */
+      display: none; /* nur einmal definiert */
       z-index: 1000;
       flex-direction: column;
       overflow: hidden;
+    }
+
+    .questionToggle {
+      font-weight: bold;
+      margin-bottom: 6px;
+      cursor: pointer;
+      user-select: none;
+      padding: 6px 0;
     }
 
     #imageContainer {
@@ -109,8 +81,6 @@
     #imageContainer img {
       max-width: 100%;
       max-height: 100%;
-      width: auto;
-      height: auto;
       object-fit: contain;
       display: block;
     }
@@ -121,7 +91,68 @@
       overflow-y: auto;
       padding: 20px 30px 30px 30px;
       text-align: left;
-      color: #000000; /* Fließtext im hellen Bereich */
+      color: #000000;
+    }
+    #questionsContent strong {
+      font-size: 20px;
+      margin-bottom: 12px;
+      display: block;
+    }
+
+    .answersWrapper {
+      display: none;
+      margin-bottom: 0px;
+    }
+
+    .answer {
+      display: block;
+      padding: 8px 12px;
+      margin: 4px 0 10px 0;
+      background: #f5f5f5;
+      border-radius: 0px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+      color: #000;
+      width: 100%;
+      box-sizing: border-box;
+      text-align: left;
+      outline: none;
+      border: none;
+    }
+    .answer:hover {
+      background: #e0e0e0;
+    }
+
+    .correct {
+      background: #28a745 !important;
+      color: white !important;
+      position: relative;
+      padding-right: 30px;
+    }
+    .correct::after {
+      content: "✔";
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-weight: bold;
+      font-size: 18px;
+    }
+
+    .incorrect {
+      background: #dc3545 !important;
+      color: white !important;
+      position: relative;
+      padding-right: 30px;
+    }
+    .incorrect::after {
+      content: "✘";
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-weight: bold;
+      font-size: 18px;
     }
 
     #buttonRow {
@@ -131,9 +162,75 @@
       justify-content: center;
       flex-shrink: 0;
     }
-  </style>
 
-  <link rel="stylesheet" href="styles.css">
+    #buttonRow button {
+      padding: 12px 24px;
+      font-size: 16px;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      color: white;
+      background-color: #dc3545;
+      transition: background-color 0.3s ease;
+    }
+    #closeBtn:hover {
+      background-color: #a71d2a;
+    }
+	
+	/* sichtbarer Tastaturfokus für Fragen (Toggles) */
+	.questionToggle:focus-visible {
+	  outline: 3px solid #023d6b; 
+	  outline-offset: 2px;
+	  border-radius: 6px;
+	}
+
+	/* sichtbarer Tastaturfokus für Antwort-Buttons */
+	.answer:focus-visible {
+	  outline: 3px solid #023d6b;
+	  outline-offset: 2px;
+	}
+
+	/* Schließen-Button im Overlay */
+	#closeBtn:focus-visible {
+	  outline: 3px solid #023d6b;
+	  outline-offset: 3px;
+	  border-radius: 10px; 
+	}
+	
+	#spinBtn {
+	  position: absolute;
+	  top: 50%;
+	  left: 50%;
+	  transform: translate(-50%, -50%);
+	  width: 120px;
+	  height: 120px;
+	  border-radius: 50%;
+	  border: none;
+	  background-color: #ebebeb;
+	  color: #023d6b;
+	  font-size: 20px;
+	  font-weight: bold;
+	  cursor: pointer;
+	  box-shadow: 0 0 8px rgba(0,0,0,0.2);
+	  transition: background-color 0.3s ease, box-shadow 0.3s ease, transform 0.1s ease;
+	}
+
+	/* Hover + Tastaturfokus */
+	#spinBtn:hover,
+	#spinBtn:focus-visible {
+	  background-color: #ebebeb;
+	  box-shadow: 0 0 15px rgba(0,0,0,0.4);
+	  outline: none; 
+	}
+
+	/* Klick-Effekt */
+	#spinBtn:active {
+	  transform: translate(-50%, -50%) scale(0.95);
+	  box-shadow: 0 0 10px rgba(0,0,0,0.3);
+	}
+
+
+  </style>
 </head>
 <body>
 
@@ -141,11 +238,10 @@
     <div style="position: relative;">
       <div id="arrow"></div>
       <canvas id="wheelCanvas" width="700" height="700"></canvas>
+	  <nav aria-label="Glücksrad Steuerung">
+		<button id="spinBtn" aria-label="Glücksrad drehen">Drehen</button>
+		</nav>
     </div>
-
-    <!-- (Optional) Spin-Button, wenn gewünscht
-    <button id="spinBtn" aria-label="Glücksrad drehen">Drehen</button>
-    -->
   </div>
 
   <div id="questions" tabindex="-1" role="dialog" aria-modal="true">
@@ -159,9 +255,8 @@
   </div>
 
   <script>
-    // Segment-Daten (unverändert; justification & Canvas-Text bleiben wie von dir)
     const segments = [
-      // SDG 1
+	// SDG 1
       {
         label: "Keine Armut (SDG 1)",
         color: "#e5243b",
@@ -172,13 +267,55 @@
             text: "Frage: Wie trägt das Projekt OrganoRice zur Armutsbekämpfung bei?",
             answers: [
               { text: "A) Durch die Entwicklung gentechnisch veränderter Reissorten für den Export", correct: false },
-              { text: "B) Durch Umstellung auf ökologischen Reisanbau mit Fokus auf Umweltverträglichkeit und ökonomische Perspektiven für Landwirte", correct: true },
-              { text: "C) Durch staatlich finanzierte Reissubventionen ohne Veränderung der Anbaumethoden", correct: false }
+              { text: "B) Durch Umstellung auf ökologischen Reisanbau ...", correct: true },
+              { text: "C) Durch staatlich finanzierte Reissubventionen ...", correct: false }
             ],
-            justification: "<a> https://www.fz-juelich.de/de/ibg/ibg-3/forschung/umweltprozesse-und-technologien/umweltsensorik-und-monitoring/organo-rice</a>OrganoRice (IBG-3) analysiert und begleitet die Umstellung von konventionellem auf ökologischen Reisanbau. Das Projekt berücksichtigt Pestizidreduktion, Wassermanagement, Reisqualität und sozioökonomische Rahmenbedingungen, um Landwirten eine nachhaltige und ökonomisch tragfähige Perspektive zu bieten, was wesentlich zur Armutsbekämpfung beiträgt."
+            justification: `
+              <p>
+              <a href="https://www.fz-juelich.de/de/ibg/ibg-3/forschung/umweltprozesse-und-technologien/umweltsensorik-und-monitoring/organo-rice"
+                 target="_blank" rel="noopener noreferrer">OrganoRice</a>
+              (IBG-3) analysiert und begleitet die Umstellung ...
+              </p>`
           }
         ]
+      },
+	// SDG 2
+	{
+    label: "Kein Hunger (SDG 2)",
+    color: "#DDA63A",
+    image: "https://www.fz-juelich.de/de/ueber-uns/mission/nachhaltigkeit/sdg-icon-de-02.svg/@@images/image-1-3a5ed0aef72920f776d7c4a404b7f6d1.svg",
+    imageBgColor: "#dda63a",
+    questions: [
+      {
+        text: "Welche Nutzpflanze untersucht das FZJ zur Unterstützung kleinbäuerlicher Einkommen?",
+        answers: [
+          { text: "A) Quinoa", correct: false },
+          { text: "B) Maniok (Cassava)", correct: true },
+          { text: "C) Süßkartoffel", correct: false }
+        ],
+        justification: "Das IBG-2 erforscht Maniok zur Ertragsstabilisierung und Einkommenssicherung für Kleinbauern."
       }
+    ]
+  },
+
+  // SDG 3
+  {
+    label: "Gesundheit und Wohlergehen (SDG 3)",
+    color: "#4C9F38",
+    image: "https://www.fz-juelich.de/de/ueber-uns/mission/nachhaltigkeit/sdg-icon-de-03.svg/@@images/image-1-7f58dab14702daaecf7735004b581e25.svg",
+    imageBgColor: "#4C9F38",
+    questions: [
+      {
+        text: "Welchen Beitrag leistet das Projekt EBRAINS zur Förderung von Gesundheit und Wohlergehen?",
+        answers: [
+          { text: "A) Bürger:innen können direkt Hirnscans zur Selbstdiagnose abrufen", correct: false },
+          { text: "B) Digitale Infrastruktur für Forschung am Gehirn mit Daten, Simulationen und KI-Tools", correct: true },
+          { text: "C) Entwicklung von Medikamenten ohne klinische Studien", correct: false }
+        ],
+        justification: "EBRAINS (INM-1) bietet als Forschungsinfrastruktur Zugang zu Hirndaten, Simulationen, KI-Tools und HPC, fördert Zusammenarbeit und Innovationen im Gesundheitswesen."
+      }
+	 ]
+	}	 
     ];
 
     const canvas = document.getElementById("wheelCanvas");
@@ -186,6 +323,20 @@
     const centerX = canvas.width / 2;
     const centerY = canvas.height / 2;
     const radius = 320;
+    const BASE_OFFSET = -Math.PI / 2;
+	const spinBtn = document.getElementById("spinBtn");
+
+	spinBtn.addEventListener("click", () => {
+	  if (!spinning) startSpin();
+	});
+
+	spinBtn.addEventListener("keydown", (e) => {
+	  if ((e.key === "Enter" || e.key === " ") && !spinning) {
+		e.preventDefault();
+		startSpin();
+	  }
+});
+
     let lastIndex = -1;
     let spinning = false;
     let rotation = 0;
@@ -194,15 +345,9 @@
     const resultImage = document.getElementById("resultImage");
     const questionsContent = document.getElementById("questionsContent");
 
-    // Overlay beim Laden verstecken
-    window.onload = () => {
-      questionsOverlay.style.display = "none";
-    };
-
-    // Icons vorladen, dann Rad zeichnen
+    // Icons laden
     let loadedImages = 0;
     const totalImages = segments.length;
-
     segments.forEach((segment) => {
       const img = new Image();
       img.src = segment.image;
@@ -210,7 +355,7 @@
         segment.iconImg = img;
         loadedImages++;
         if (loadedImages === totalImages) {
-          drawWheel(-Math.PI / 2);
+          drawWheel(0);
         }
       };
     });
@@ -221,8 +366,8 @@
       const anglePerSegment = (2 * Math.PI) / numSegments;
 
       for (let i = 0; i < numSegments; i++) {
-        const startAngle = i * anglePerSegment + rotationOffset;
-        const endAngle = startAngle + anglePerSegment;
+        const startAngle = i * anglePerSegment + BASE_OFFSET + rotationOffset;
+        const endAngle   = startAngle + anglePerSegment;
 
         ctx.beginPath();
         ctx.moveTo(centerX, centerY);
@@ -233,18 +378,15 @@
         const icon = segments[i].iconImg;
         if (icon) {
           const angle = startAngle + anglePerSegment / 2;
-
           const iconRadius = radius * 0.83;
           let iconX = centerX + iconRadius * Math.cos(angle);
           let iconY = centerY + iconRadius * Math.sin(angle);
-
           const offset = 4;
           iconX += Math.cos(angle) * offset;
           iconY += Math.sin(angle) * offset;
 
           const iconSize = 80;
           const r = 18;
-
           const x = iconX - iconSize / 2;
           const y = iconY - iconSize / 2;
 
@@ -261,20 +403,26 @@
           ctx.quadraticCurveTo(x, y, x + r, y);
           ctx.closePath();
           ctx.clip();
-
           ctx.drawImage(icon, x, y, iconSize, iconSize);
           ctx.restore();
         }
       }
     }
 
-    drawWheel();
-
-    // Klick auf Canvas startet Spin
     canvas.addEventListener("click", () => {
-      if (spinning) return;
-      startSpin();
+      if (!spinning) startSpin();
     });
+	spinBtn.addEventListener("click", () => {
+	  if (!spinning) startSpin();
+	});
+
+	// Tastatur-Bedienung
+	spinBtn.addEventListener("keydown", (e) => {
+	  if ((e.key === "Enter" || e.key === " ") && !spinning) {
+		e.preventDefault();
+		startSpin();
+	  }
+	});
 
     function startSpin() {
       spinning = true;
@@ -303,76 +451,101 @@
           if (selectedIndex === lastIndex) {
             selectedIndex = (selectedIndex + 1) % numSegments;
           }
-
           lastIndex = selectedIndex;
           showResult(selectedIndex);
         }
       }
-
       requestAnimationFrame(animate);
     }
 
     function handleKeydown(e, segIdx, qIdx) {
-      if (e.key === "Enter" || e.key === " ") {
-        e.preventDefault();
-        toggleAnswers(segIdx, qIdx);
-      }
-    }
+		if (e.key === "Enter" || e.key === " " || e.code === "Space") {
+			e.preventDefault();
+			toggleAnswers(segIdx, qIdx);
+		}
+	}
+
 
     function showResult(index) {
       const segment = segments[index];
-      const tempImg = new Image();
-      tempImg.onload = () => {
-        resultImage.src = tempImg.src;
-      };
-      tempImg.src = segment.image;
-
+      resultImage.src = segment.image;
       document.getElementById("imageContainer").style.backgroundColor = segment.imageBgColor || "#e0f2ff";
 
       let html = `<strong>${segment.label}</strong>`;
 
-      segment.questions.forEach((q, i) => {
-        html += `<div 
-          class="questionToggle" 
-          role="button" 
-          tabindex="0" 
-          onclick="toggleAnswers(${index},${i})" 
-          onkeydown="handleKeydown(event, ${index}, ${i})">
-          ${q.text}
-        </div>`;
+		segment.questions.forEach((q, i) => {
+		  // Frage-Toggle mit ID und ARIA
+		  html += `<div 
+			  class="questionToggle" 
+			  id="toggle-${index}-${i}"
+			  role="button" 
+			  tabindex="0"
+			  aria-controls="answers-${index}-${i}"
+			  aria-expanded="false"
+			  onkeydown="handleKeydown(event, ${index}, ${i})">
+			  ${q.text}
+		</div>`;
 
-        html += `<div class="answersWrapper" id="answers-${index}-${i}">`;
-        q.answers.forEach((a, ai) => {
-          const id = `answer-${index}-${i}-${ai}`;
-          html += `<button class="answer" id="${id}" onclick="checkAnswer('${id}', ${a.correct})" type="button">${a.text}</button>`;
-        });
-        html += `</div>`;
-      });
+
+		  // Antworten-Wrapper (mit ID, ARIA)
+		  html += `<div class="answersWrapper" id="answers-${index}-${i}" aria-labelledby="toggle-${index}-${i}" aria-hidden="true">`;
+		  q.answers.forEach((a, ai) => {
+			const id = `answer-${index}-${i}-${ai}`;
+			html += `<button class="answer" type="button" id="${id}" onclick="checkAnswer('${id}', ${a.correct})">${a.text}</button>`;
+		  });
+		  html += `</div>`;
+		});
+
 
       questionsContent.innerHTML = html;
+	  
+		document.querySelectorAll(".questionToggle").forEach((toggle, i) => {
+		  toggle.addEventListener("click", () => {
+			toggleAnswers(index, i);
+		  });
+		});
+
       questionsOverlay.style.display = "flex";
       questionsOverlay.focus();
 
       setTimeout(() => {
-        const firstAnswer = document.querySelector(`#answers-${index}-0 .answer`);
-        if (firstAnswer) firstAnswer.focus();
-      }, 50);
-    }
+        const firstToggle = document.querySelector(".questionToggle");
+		if (firstToggle) firstToggle.focus();
+		}, 0);
+	}
 
     function toggleAnswers(segIdx, qIdx) {
-      const elem = document.getElementById(`answers-${segIdx}-${qIdx}`);
-      if (!elem) return;
-      elem.style.display = elem.style.display === "block" ? "none" : "block";
-    }
+	  const wrapper = document.getElementById(`answers-${segIdx}-${qIdx}`);
+	  const toggle  = document.getElementById(`toggle-${segIdx}-${qIdx}`);
+	  if (!wrapper || !toggle) return;
+
+	  const isOpen = wrapper.style.display === "block";
+
+	  if (isOpen) {
+		// Schließen
+		wrapper.style.display = "none";
+		wrapper.setAttribute("aria-hidden", "true");
+		toggle.setAttribute("aria-expanded", "false");
+		// Fokus zurück auf die Frage
+		toggle.focus();
+	  } else {
+		// Öffnen
+		wrapper.style.display = "block";
+		wrapper.setAttribute("aria-hidden", "false");
+		toggle.setAttribute("aria-expanded", "true");
+		// Fokus auf erste Antwort
+		const firstAnswer = wrapper.querySelector(".answer");
+		if (firstAnswer) firstAnswer.focus();
+	  }
+	}
+
 
     function checkAnswer(id, isCorrect) {
       const el = document.getElementById(id);
       if (!el || el.classList.contains("correct") || el.classList.contains("incorrect")) return;
-
       if (isCorrect) {
         el.classList.add("correct");
-
-        const [_, segIdx, qIdx, ai] = id.split("-");
+        const [_, segIdx, qIdx] = id.split("-");
         const question = segments[segIdx].questions[qIdx];
         if (question.justification) {
           const justificationElem = document.createElement("div");
@@ -381,8 +554,7 @@
           justificationElem.style.backgroundColor = "#e6f6ec";
           justificationElem.style.borderLeft = "4px solid #28a745";
           justificationElem.style.color = "#000";
-          justificationElem.innerHTML = ` ${question.justification}`;
-
+          justificationElem.innerHTML = question.justification;
           el.insertAdjacentElement("afterend", justificationElem);
         }
       } else {
@@ -392,10 +564,10 @@
 
     function closeOverlay() {
       questionsOverlay.style.display = "none";
-      drawWheel(-Math.PI / 2);
+      drawWheel(0);
     }
 
-    document.addEventListener("keydown", function (e) {
+    document.addEventListener("keydown", (e) => {
       if (e.key === "Escape" && questionsOverlay.style.display === "flex") {
         closeOverlay();
       }
