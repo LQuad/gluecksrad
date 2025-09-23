@@ -60,7 +60,7 @@
     }
 
     /* Landmarke + runder Spin-Button in der Mitte */
-    nav[aria-label="Glücksrad Steuerung"] {
+    nav[aria-label="Zum Glücksrad"] {
     }
 
     #spinBtn {
@@ -152,7 +152,7 @@
       cursor: pointer;
       user-select: none;
       padding: 0.375rem 0.125rem;
-	font-size: 1rem;;
+	font-size: 1rem;
     }
 
     .answersWrapper {
@@ -321,7 +321,7 @@
       <canvas id="wheelCanvas"></canvas>
 
       <!-- Landmarke + zentraler Button -->
-      <nav aria-label="Zum 	Glücksrad">
+      <nav aria-label="Zum Glücksrad">
 		<button id="spinBtn" aria-label="Glücksrad drehen">Drehen</button>
 		</nav>
     </div>
@@ -349,7 +349,7 @@
         imageBgColor: "#e5243b",
         questions: [
           {
-            text: "Frage: Wie trägt das Projekt OrganoRice zur Armutsbekämpfung bei?",
+            text: "Wie trägt das Projekt OrganoRice zur Armutsbekämpfung bei?",
             answers: [
               { text: "A) Durch die Entwicklung gentechnisch veränderter Reissorten für den Export", correct: false },
               { text: "B) Durch Umstellung auf ökologischen Reisanbau mit Fokus auf Umweltverträglichkeit und ökonomische Perspektiven für Landwirte", correct: true },
@@ -915,13 +915,18 @@
           role="button" 
           tabindex="0"
           aria-controls="answers-${index}-${i}"
-          aria-expanded="false"
+          aria-expanded="${i === 0 ? "true" : "false"}"
           onkeydown="handleKeydown(event, ${index}, ${i})">
           ${q.text}
         </div>`;
 
         // Antworten
-        html += `<div class="answersWrapper" id="answers-${index}-${i}" aria-labelledby="toggle-${index}-${i}" aria-hidden="true">`;
+        html += `<div class="answersWrapper"
+		  id="answers-${index}-${i}"
+		  aria-labelledby="toggle-${index}-${i}"
+		  aria-hidden="${i === 0 ? "false" : "true"}"
+		  style="display:${i === 0 ? "block" : "none"};">`;
+
         q.answers.forEach((a, ai) => {
           const id = `answer-${index}-${i}-${ai}`;
           html += `<button class="answer" type="button" id="${id}" onclick="checkAnswer('${id}', ${a.correct})">${a.text}</button>`;
@@ -940,10 +945,10 @@
         toggleEl.addEventListener("click", () => toggleAnswers(index, qIdx));
       });
 
-      // Fokus auf erste Frage
+      // Fokus auf erste Antwort
       setTimeout(() => {
-        const firstToggle = document.querySelector(".questionToggle");
-        if (firstToggle) firstToggle.focus();
+        const firstAnswer = document.querySelector(".answersWrapper .answer");
+		if (firstAnswer) firstAnswer.focus();
       }, 0);
     }
 
