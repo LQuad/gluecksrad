@@ -59,9 +59,7 @@
       border-radius: 12px;
     }
 
-    /* Landmarke + runder Spin-Button in der Mitte */
-    nav[aria-label="Zum Glücksrad"] {
-    }
+    /* Runder Spin-Button in der Mitte */
 
     #spinBtn {
       position: absolute;
@@ -94,22 +92,38 @@
       box-shadow: 0 0 10px rgba(0,0,0,0.3);
     }
 
-    /* Overlay */
+    /* Dialog */
     #questions {
       position: fixed;
-      top: 50%; left: 50%;
+      top: 50%;
+      left: 50%;
       transform: translate(-50%, -50%);
       width: 520px;
       max-width: 92vw;
       height: 92dvh;
+      max-height: 92dvh;
+      margin: 0;
+      padding: 0;
+      border: none;
       background: var(--accent);
       box-shadow: 0 0 20px rgba(0,0,0,0.6);
       color: white;
-      display: none; 
       z-index: 1000;
       flex-direction: column;
       overflow: hidden;
       border-radius: 12px;
+    }
+
+    #questions:not([open]) {
+      display: none;
+    }
+
+    #questions[open] {
+      display: flex;
+    }
+
+    #questions::backdrop {
+      background: rgba(0,0,0,0.55);
     }
 
     #imageContainer {
@@ -139,20 +153,31 @@
       color: #000;
     }
 	
-    #questionsContent strong {
-	  font-size: 1.25rem;
-	  margin-bottom: 0.625rem;
-      display: block;
+    #dialogTitle {
+      font-size: 1.25rem;
+      margin: 0 0 0.625rem;
       color: var(--accent);
     }
 
+    #dialogTitle:focus {
+      outline: none;
+    }
+
     .questionToggle {
+      display: block;
+      width: 100%;
+      box-sizing: border-box;
+      border: 0;
+      background: transparent;
+      color: inherit;
+      font-family: inherit;
+      text-align: left;
       font-weight: bold;
       margin: 0.5rem 0 0.25rem;
       cursor: pointer;
       user-select: none;
       padding: 0.375rem 0.125rem;
-	font-size: 1rem;
+      font-size: 1rem;
     }
 
     .answersWrapper {
@@ -192,7 +217,7 @@
 	}
 
     .correct {
-      background: #28a745 !important;
+      background: #1e7e34 !important;
       color: #fff !important;
       position: relative;
       padding-right: 30px;
@@ -244,8 +269,8 @@
     }
     #closeBtn:hover { background-color: #a71d2a; }
 
-    /* sichtbarer Fokus NUR bei Tastatur-Nutzung */
     .questionToggle:focus-visible,
+    /* sichtbarer Fokus NUR bei Tastatur-Nutzung */
 	.answer:focus-visible,
 	#closeBtn:focus-visible {
 	  outline: 3px solid #023d6b;
@@ -260,7 +285,7 @@
     /* Mobile Tweaks */
     @media (max-width: 480px) {
       #questionsContent { padding: 0.875rem; }
-      #questionsContent strong { font-size: 1.125rem; }
+      #dialogTitle { font-size: 1.125rem; }
       .questionToggle { font-size: 1rem; }
       .answer { font-size: 1rem; padding: 0.625rem 0.75rem; }
       #buttonRow button { width: 100%; font-size: 1.125rem; padding: 0.875rem 1.125rem; }
@@ -279,13 +304,11 @@
 	  position: absolute;
 	  left: 50%;
 	  transform: translateX(-50%);
-	  /* etwas Luft zum Rand + Safe-Area berücksichtigen */
 	  top: calc(-1 * var(--arrowH) + max(10px, env(safe-area-inset-top, 0px)));
 	  z-index: 2;
 	  pointer-events: none;
 	}
 
-	/* Sehr flache Landscape-Displays: mehr Luft + ggf. kleinere Pfeile */
 	@media (orientation: landscape) and (max-height: 500px) {
 	  :root {
 		--arrowH: clamp(16px, 5vmin, 36px);
@@ -296,7 +319,6 @@
 	  }
 	}
 
-	/* Desktop kann so bleiben – optional fester, größerer Pfeil */
 	@media (min-width: 1024px) {
 	  :root { --arrowH: 48px; --arrowW: 30px; }
 	  #arrow { top: calc(-1 * var(--arrowH) + 12px); }
@@ -324,30 +346,31 @@
 
   <div id="wheelWrapper">
     <div class="wheel-stage">
-      <div id="arrow"></div>
-      <canvas id="wheelCanvas"></canvas>
+      <div id="arrow" aria-hidden="true"></div>
+      <canvas id="wheelCanvas" aria-hidden="true"></canvas>
 
-      <!-- Landmarke + zentraler Button -->
-      <nav aria-label="Zum Glücksrad">
-		<button id="spinBtn" aria-label="Glücksrad drehen">Drehen</button>
-		</nav>
+      <button id="spinBtn" type="button" aria-label="Glücksrad drehen">Drehen</button>
     </div>
   </div>
 
-  <!-- Overlay -->
-  <div id="questions" tabindex="-1" role="dialog" aria-modal="true"  aria-labelledby="dialogTitle" aria-describedby="questionsContent">
-  <h2 id="dialogTitle" class="visually-hidden">Ausgewähltes SDG</h2>
+  <!-- Dialog -->
+  <dialog id="questions" aria-labelledby="dialogTitle">
     <div id="imageContainer">
-      <img id="resultImage" src="" alt="Ergebnisbild" />
+      <img id="resultImage" src="" alt="">
     </div>
-    <div id="questionsContent"></div>
+
+    <div id="questionsContent">
+      <h2 id="dialogTitle" tabindex="-1">Ausgewähltes SDG</h2>
+      <div id="questionsList"></div>
+    </div>
+
     <div id="buttonRow">
-      <button id="closeBtn" type="button" onclick="closeOverlay()">Schließen</button>
+      <button id="closeBtn" type="button">Schließen</button>
     </div>
-  </div>
+  </dialog>
 
   <script>
-    /* ===== Segmente ===== */
+    // Segmente
     const segments = [
       // SDG 1
       {
@@ -419,7 +442,7 @@
       },
 	  
 	  	  
-	  // SDG 4
+	 // SDG 4
 	   {
         label: "Hochwertige Bildung (SDG 4)",
         color: "#C5192D",
@@ -714,12 +737,15 @@
       }
     ];
 
-    /* ===== Setup & State ===== */
     const canvas = document.getElementById("wheelCanvas");
+    // Setup & State
     const ctx = canvas.getContext("2d", { alpha: true });
     const questionsOverlay = document.getElementById("questions");
     const resultImage = document.getElementById("resultImage");
     const questionsContent = document.getElementById("questionsContent");
+    const questionsList = document.getElementById("questionsList");
+    const dialogTitle = document.getElementById("dialogTitle");
+    const closeBtn = document.getElementById("closeBtn");
     const spinBtn = document.getElementById("spinBtn");
 
     const BASE_OFFSET = -Math.PI / 2;
@@ -728,7 +754,7 @@
     let spinning = false;
     let rotation = 0;
 
-    /* ===== Responsive Canvas ===== */
+    // Responsive Canvas
     function sizeCanvas() {
 	  const dpr = Math.max(1, window.devicePixelRatio || 1);
 
@@ -753,21 +779,26 @@
     window.addEventListener("resize", sizeCanvas);
     window.addEventListener("orientationchange", sizeCanvas);
 
-    /* ===== Bilder vorladen, dann initial zeichnen ===== */
-    let loadedImages = 0;
+    // Initial zeichnen + Bilder nachladen
+   
+    sizeCanvas();
+
     segments.forEach((segment) => {
       const img = new Image();
-      img.src = segment.image;
+
       img.onload = () => {
         segment.iconImg = img;
-        loadedImages++;
-        if (loadedImages === segments.length) {
-          sizeCanvas(); 
-        }
+        drawWheel(rotation);
       };
+
+      img.onerror = () => {
+        console.warn("SDG-Icon konnte nicht geladen werden:", segment.image);
+      };
+
+      img.src = segment.image;
     });
 
-    /* ===== Zeichnen ===== */
+    // Zeichnen
     function drawWheel(rotationOffset = 0) {
       const w = canvas.clientWidth;
       const h = canvas.clientHeight;
@@ -790,8 +821,8 @@
         ctx.fillStyle = segments[i].color;
         ctx.fill();
 
-        // ---- ICONS ----
 		const icon = segments[i].iconImg;
+        // ICONS
 		if (icon) {
 		  const angle = startAngle + anglePerSegment / 2;
 
@@ -853,7 +884,7 @@
       }
     }
 
-    /* ===== Spin starten ===== */
+    // Spin starten
     function startSpin() {
       if (spinning) return;
       spinning = true;
@@ -888,138 +919,181 @@
       requestAnimationFrame(animate);
     }
 
-    /* ===== Interaktionen: Canvas + Button + Touch ===== */
-    canvas.addEventListener("click", () => { if (!spinning) startSpin(); });
-    canvas.addEventListener("touchend", (e) => { e.preventDefault(); if (!spinning) startSpin(); }, { passive: false });
-
-    spinBtn.addEventListener("click", () => { if (!spinning) startSpin(); });
-    spinBtn.addEventListener("keydown", (e) => {
-      if ((e.key === "Enter" || e.key === " " || e.code === "Space") && !spinning) {
-        e.preventDefault();
-        startSpin();
-      }
+    // Interaktionen: Canvas + Button + Touch
+    canvas.addEventListener("click", () => {
+      if (!spinning) startSpin();
     });
-    spinBtn.addEventListener("touchend", (e) => { e.preventDefault(); if (!spinning) startSpin(); }, { passive: false });
 
-   
-    function handleKeydown(e, segIdx, qIdx) {
-      if (e.key === "Enter" || e.key === " " || e.code === "Space") {
+    canvas.addEventListener(
+      "touchend",
+      (e) => {
         e.preventDefault();
-        toggleAnswers(segIdx, qIdx);
-      }
-    }
+        if (!spinning) startSpin();
+      },
+      { passive: false }
+    );
+
+    spinBtn.addEventListener("click", () => {
+      if (!spinning) startSpin();
+    });
+
+    spinBtn.addEventListener(
+      "touchend",
+      (e) => {
+        e.preventDefault();
+        if (!spinning) startSpin();
+      },
+      { passive: false }
+    );
 
     function showResult(index) {
       const segment = segments[index];
-	  
-	  document.getElementById("dialogTitle").textContent = segment.label;
-		resultImage.alt = `${segment.label} – Symbol`;
-	  
+
+      dialogTitle.textContent = segment.label;
       resultImage.src = segment.image;
-      document.getElementById("imageContainer").style.backgroundColor = segment.imageBgColor || "#e0f2ff";
+      resultImage.alt = "";
 
-      let html = `<strong>${segment.label}</strong>`;
+      document.getElementById("imageContainer").style.backgroundColor =
+        segment.imageBgColor || "#e0f2ff";
+
+      let html = "";
+
       segment.questions.forEach((q, i) => {
-        // Frage Toggle
-        html += `<div 
-          class="questionToggle" 
-          id="toggle-${index}-${i}"
-          role="button" 
-          tabindex="0"
-          aria-controls="answers-${index}-${i}"
-          aria-expanded="${i === 0 ? "true" : "false"}"
-          onkeydown="handleKeydown(event, ${index}, ${i})">
-          ${q.text}
-        </div>`;
+        const isFirstQuestion = i === 0;
 
-        // Antworten
-        html += `<div class="answersWrapper"
-		  id="answers-${index}-${i}"
-		  aria-labelledby="toggle-${index}-${i}"
-		  aria-hidden="${i === 0 ? "false" : "true"}"
-		  style="display:${i === 0 ? "block" : "none"};">`;
+        html += `
+          <button
+            type="button"
+            class="questionToggle"
+            id="toggle-${index}-${i}"
+            aria-controls="answers-${index}-${i}"
+            aria-expanded="${isFirstQuestion ? "true" : "false"}">
+            ${q.text}
+          </button>
+        `;
+
+        html += `
+          <div
+            class="answersWrapper"
+            id="answers-${index}-${i}"
+            aria-labelledby="toggle-${index}-${i}"
+            style="display:${isFirstQuestion ? "block" : "none"};">
+        `;
 
         q.answers.forEach((a, ai) => {
           const id = `answer-${index}-${i}-${ai}`;
-          html += `<button class="answer" type="button" id="${id}" onclick="checkAnswer('${id}', ${a.correct})">${a.text}</button>`;
+
+          html += `
+            <button
+              class="answer"
+              type="button"
+              id="${id}"
+              onclick="checkAnswer('${id}', ${a.correct})">
+              ${a.text}
+            </button>
+          `;
         });
+
         html += `</div>`;
       });
 
-      questionsContent.innerHTML = html;
-      questionsOverlay.style.display = "flex";
-      questionsOverlay.focus();
+      questionsList.innerHTML = html;
 
-      // Click-Handler für alle Toggles (Maus)
-      document.querySelectorAll(`.questionToggle[id^="toggle-${index}-"]`).forEach((toggleEl) => {
-        const parts = toggleEl.id.split("-");
-        const qIdx = Number(parts[2]);
-        toggleEl.addEventListener("click", () => toggleAnswers(index, qIdx));
+      questionsList
+        .querySelectorAll(`.questionToggle[id^="toggle-${index}-"]`)
+        .forEach((toggleEl) => {
+          const parts = toggleEl.id.split("-");
+          const qIdx = Number(parts[2]);
+
+          toggleEl.addEventListener("click", () => {
+            toggleAnswers(index, qIdx);
+          });
+        });
+
+      questionsOverlay.showModal();
+
+      requestAnimationFrame(() => {
+        dialogTitle.focus();
       });
-
-      // Fokus auf erste Antwort
-      setTimeout(() => {
-        const firstAnswer = document.querySelector(".answersWrapper .answer");
-		if (firstAnswer) firstAnswer.focus();
-      }, 0);
     }
 
     function toggleAnswers(segIdx, qIdx) {
       const wrapper = document.getElementById(`answers-${segIdx}-${qIdx}`);
-      const toggle  = document.getElementById(`toggle-${segIdx}-${qIdx}`);
+      const toggle = document.getElementById(`toggle-${segIdx}-${qIdx}`);
+
       if (!wrapper || !toggle) return;
 
-      const isOpen = wrapper.style.display === "block";
+      const isOpen = toggle.getAttribute("aria-expanded") === "true";
 
       if (isOpen) {
-        // schließen
         wrapper.style.display = "none";
-        wrapper.setAttribute("aria-hidden", "true");
         toggle.setAttribute("aria-expanded", "false");
-        toggle.focus(); // Fokus zurück auf Frage
+
+        if (wrapper.contains(document.activeElement)) {
+          toggle.focus();
+        }
       } else {
-        // öffnen
         wrapper.style.display = "block";
-        wrapper.setAttribute("aria-hidden", "false");
         toggle.setAttribute("aria-expanded", "true");
+
         const firstAnswer = wrapper.querySelector(".answer");
-        if (firstAnswer) firstAnswer.focus(); // Fokus erste Antwort
+        if (firstAnswer) {
+          firstAnswer.focus();
+        }
       }
     }
 
     function checkAnswer(id, isCorrect) {
       const el = document.getElementById(id);
-      if (!el || el.classList.contains("correct") || el.classList.contains("incorrect")) return;
+
+      if (
+        !el ||
+        el.classList.contains("correct") ||
+        el.classList.contains("incorrect")
+      ) {
+        return;
+      }
+
+      const answerText = el.textContent.trim();
 
       if (isCorrect) {
         el.classList.add("correct");
+        el.setAttribute("aria-label", `${answerText} – Richtig`);
+
         const [, segIdx, qIdx] = id.split("-");
         const question = segments[segIdx].questions[qIdx];
+
         if (question.justification) {
           const justificationElem = document.createElement("div");
           justificationElem.style.marginTop = "10px";
           justificationElem.style.padding = "10px";
           justificationElem.style.backgroundColor = "#e6f6ec";
-          justificationElem.style.borderLeft = "4px solid #28a745";
+          justificationElem.style.borderLeft = "4px solid #1e7e34";
           justificationElem.style.color = "#000";
           justificationElem.innerHTML = question.justification;
+
           el.insertAdjacentElement("afterend", justificationElem);
         }
       } else {
         el.classList.add("incorrect");
+        el.setAttribute("aria-label", `${answerText} – Falsch`);
       }
     }
 
     function closeOverlay() {
-      questionsOverlay.style.display = "none";
+      if (questionsOverlay.open) {
+        questionsOverlay.close();
+      }
+
       drawWheel(0);
-	  spinBtn.focus();
+      spinBtn.focus();
     }
 
-    document.addEventListener("keydown", (e) => {
-      if (e.key === "Escape" && questionsOverlay.style.display === "flex") {
-        closeOverlay();
-      }
+    closeBtn.addEventListener("click", closeOverlay);
+
+    questionsOverlay.addEventListener("cancel", (event) => {
+      event.preventDefault();
+      closeOverlay();
     });
   </script>
 </body>
